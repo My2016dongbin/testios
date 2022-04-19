@@ -1,0 +1,168 @@
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader('UTF-8') { reader ->
+        localProperties.load(reader)
+    }
+}
+
+def flutterRoot = localProperties.getProperty('flutter.sdk')
+if (flutterRoot == null) {
+    throw new GradleException("Flutter SDK not found. Define location with flutter.sdk in the local.properties file.")
+}
+
+
+def flutterVersionCode = "1"
+def flutterVersionName = "1.0.1"
+
+/*def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
+if (flutterVersionCode == null) {
+    flutterVersionCode = '1'
+}
+
+def flutterVersionName = localProperties.getProperty('flutter.versionName')
+if (flutterVersionName == null) {
+    flutterVersionName = '1.0'
+}*/
+
+apply plugin: 'com.android.application'
+apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
+
+android {
+    compileSdkVersion 30
+
+//    lintOptions {
+//        disable 'InvalidPackage'
+//        //如打包出现Failed to transform libs.jar to match attributes
+//        checkReleaseBuilds false
+//    }
+
+//    lintOptions {
+//        disable 'InvalidPackage'
+//    }
+    defaultConfig {
+        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        multiDexEnabled true
+
+        applicationId "com.haohai.fireprevention"
+        minSdkVersion 22
+        targetSdkVersion 30
+        versionCode flutterVersionCode.toInteger()
+        versionName flutterVersionName
+
+        ndk {
+            //设置支持的SO库架构
+            abiFilters 'armeabi-v7a'//, 'arm64-v8a', 'x86', 'x86_64'
+        }
+//        ndk {
+//            abiFilters 'armeabi', 'armeabi-v7a', 'x86', 'x86_64', 'mips', 'mips64', 'arm64-v8a', 'arm6'
+//        }
+        manifestPlaceholders = [
+//                XG_ACCESS_ID : "1500021297",
+//                XG_ACCESS_KEY : "AV0K8U5SDTCI",
+                XG_ACCESS_ID : "1500015815",
+                XG_ACCESS_KEY : "AO3YNOCJ0AK2",
+        ]
+    }
+
+
+    //签名
+    signingConfigs {
+        debugConfig {
+            storeFile file("../fireprevention.jks")      //签名文件
+            storePassword "123456"
+            keyAlias "key0"
+            keyPassword "123456"  //签名密码
+        }
+        release {
+            storeFile file("../fireprevention.jks")      //签名文件
+            storePassword "123456"
+            keyAlias "key0"
+            keyPassword "123456"  //签名密码
+        }
+    }
+    flavorDimensions "app"
+    productFlavors {
+        haohaiVersion {
+            dimension 'app'
+            applicationId "com.haohai.fireprevention"//包名
+//            resValue "string", "app_name", "印刷管家"   // 设置默认的app_name
+            manifestPlaceholders = [
+                    APP_ICON: "@drawable/ic_icon",//app图标
+                    CHANNEL_NAME: "haohaiVersion",
+                    APP_NAME: "即墨区自然卫士",
+                    AUTHORITIES: "com.haohai.fireprevention.fileprovider",
+            ]
+//            buildConfigField("String", "NET_TYPE", "ONLINE")//网络
+        }
+//        aliVersion {
+//            dimension 'app'
+//            applicationId "com.haohai.fireprevention"//包名
+//            manifestPlaceholders = [
+//                    APP_ICON: "@drawable/ic_icon",//app图标
+//                    CHANNEL_NAME: "aliVersion",
+//                    APP_NAME: "浩海火眼金睛阿里云测试版${defaultConfig.versionName}",
+//                    AUTHORITIES: "com.haohai.fireprevention.fileprovider",
+//            ]
+//        }
+//        localVersion {
+//            dimension 'app'
+//            applicationId "com.haohai.fireprevention"//包名
+//            manifestPlaceholders = [
+//                    APP_ICON: "@drawable/ic_icon",//app图标
+//                    CHANNEL_NAME: "localVersion",
+//                    APP_NAME: "浩海火眼金睛本地测试版${defaultConfig.versionName}",
+//                    AUTHORITIES: "com.haohai.fireprevention.fileprovider",
+//            ]
+//        }
+        onceVersion {
+            dimension 'app'
+            applicationId "com.haohai.fireprevention"//包名
+            manifestPlaceholders = [
+                    APP_ICON: "@drawable/ic_icon",//app图标
+                    CHANNEL_NAME: "onceVersion",
+                    APP_NAME: "即墨区自然卫士临时测试版${defaultConfig.versionName}",
+                    AUTHORITIES: "com.haohai.fireprevention.fileprovider",
+            ]
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release //解决unsigned
+            shrinkResources false
+            minifyEnabled false
+//            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+
+            ndk{
+                //QQ微信等大佬都只用"armeabi"
+                abiFilters "armeabi-v7a"
+            }
+        }
+        debug {
+            signingConfig signingConfigs.debugConfig //解决unsigned
+            minifyEnabled false
+            shrinkResources false
+//            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+
+            ndk {
+                //这里配置开发调试时的，根据个人需要增减少，x86建议加上不然部分模拟器回报错
+                abiFilters  "armeabi-v7a","arm64-v8a", "x86"
+            }
+        }
+    }
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ['libs']
+        }
+    }
+
+}
+
+flutter {
+    source '../..'
+}
+
+dependencies {
+    implementation 'com.android.support:multidex:2.0.1'
+}

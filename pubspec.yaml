@@ -1,0 +1,66 @@
+name: fireprevention
+description: Haohai forest fire prevention platform.
+
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=2.7.0 <3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.0
+  shared_preferences: ^0.5.12
+  flutter_easyrefresh: ^2.1.8
+  intl: ^0.16.1
+  flutter_localizations:
+    sdk: flutter
+  dio_cookie_manager: ^1.0.0
+  event_bus: ^1.1.0
+#  permission_handler: ^4.3.0
+  permission_handler: ^5.0.1
+  image_picker: ^0.6.2+1
+  url_launcher: ^5.7.2
+  flutter_app_upgrade: ^1.1.0
+  package_info: ^0.4.3
+  fijkplayer: ^0.8.8
+  flutter_screenutil: ^4.0.2
+  flutter_bmflocation: ^1.0.4
+  flutter_baidu_mapapi_map: ^2.0.1
+  fluttertoast: ^7.1.8
+#  dokit: ^0.2.14
+  random_string: ^1.1.0
+  flutter_easyloading: ^1.1.4
+  multi_image_picker: 4.7.14
+  path_provider: ^1.6.24
+#  flutter_bugly: ^0.3.0
+  tpns_flutter_plugin:
+    git:
+      url: https://github.com/TencentCloud/TPNS-Flutter-Plugin
+      ref: V1.0.7
+  amap_flutter_navi:
+    git:
+      url: git://github.com/qdygs/amap_flutter_navi.git
+      ref: main
+#  flutter_vpn: ^0.9.0
+
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+
+flutter:
+
+  uses-material-design: true
+
+  assets:
+    - assets/images/common/
+    - assets/images/common/refresh/
+    - assets/images/main/
+    - assets/images/main/app/
+    - assets/images/main/video/
+    - assets/images/main/map/
