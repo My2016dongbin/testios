@@ -34,9 +34,19 @@ class SplashPageState extends State<SplashPage> {
     subscription.cancel();
   }
   Image catchImage;
+
   @override
   void initState() {
+    // ///Vpn
+    // FlutterVpn.prepare();
     super.initState();
+    // ///Connect //222.173.76.34:443
+    // FlutterVpn.simpleConnect(
+    //   "222.173.76.34",
+    //   "admin20G",
+    //   "Hh123456@",
+    // );
+
     subscription =
         EventBusUtil.getInstance().on<Splash>().listen((event) {
           int pushTag = event.tag;
@@ -64,7 +74,7 @@ class SplashPageState extends State<SplashPage> {
           }
         });
 
-    catchImage = Image.asset("assets/images/common/ic_guodu.jpg",gaplessPlayback: true,);
+    catchImage = Image.asset("assets/images/common/ic_guodu.png",gaplessPlayback: true,);
 
     ///build完成后申请权限
     WidgetsBinding.instance
@@ -80,7 +90,7 @@ class SplashPageState extends State<SplashPage> {
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
     return Scaffold(
-      body: Image.asset("assets/images/common/ic_guodu.jpg",gaplessPlayback: true,fit: BoxFit.fill,width: screenWidth,height: screenHeight,),
+      body: Image.asset("assets/images/common/ic_guodu.png",gaplessPlayback: true,fit: BoxFit.fill,width: screenWidth,height: screenHeight,),
     );
   }
 

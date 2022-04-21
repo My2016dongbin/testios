@@ -1,9 +1,11 @@
 import 'package:fireprevention/base/BaseCustomerLayout.dart';
+import 'package:fireprevention/main/app/DispatcherTaskPage.dart';
 import 'package:fireprevention/model/CustomerModel.dart';
 import 'package:fireprevention/model/EventBusModel.dart';
 import 'package:fireprevention/network/Api.dart';
 import 'package:fireprevention/network/NetUtil.dart';
 import 'package:fireprevention/utils/CXColors.dart';
+import 'package:fireprevention/utils/CustomRoute.dart';
 import 'package:fireprevention/utils/EventBusUtils.dart';
 import 'package:fireprevention/utils/refresh/footer.dart';
 import 'package:fireprevention/utils/refresh/header.dart';
@@ -121,11 +123,38 @@ class ItemCell extends StatelessWidget {
                 children: [
                   Text("街道名称: ${dataS["countyName"]??""}",style: TextStyle(color: CXColors.titleColor_55,fontSize: 26.sp,height: 1.2),),
                   SizedBox(height: 10.w,),
-                  Text("报警总数: ${dataS["handleCount"]+dataS["unHandleCount"]}",style: TextStyle(color: CXColors.titleColor_55,fontSize: 26.sp),),
-                  SizedBox(height: 10.w,),
-                  Text("已处理数: ${dataS["handleCount"]??""}",style: TextStyle(color: CXColors.titleColor_55,fontSize: 26.sp),),
-                  SizedBox(height: 10.w,),
-                  Text("未处理数: ${dataS["unHandleCount"]??""}",style: TextStyle(color: CXColors.titleColor_55,fontSize: 26.sp),),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          children: [
+                            InkWell(onTap: (){Navigator.push(context, CustomRoute(DispatcherTaskPage(status: 3,)));},child: Text("任务总数: ${dataS["allTaskCount"]??"0"}",style: TextStyle(color: CXColors.titleColor_55,fontSize: 26.sp),)),
+                            SizedBox(height: 10.w,),
+                            InkWell(onTap: (){Navigator.push(context, CustomRoute(DispatcherTaskPage(status: 1,)));},child: Text("执行中数: ${dataS["executingCount"]??"0"}",style: TextStyle(color: CXColors.titleColor_55,fontSize: 26.sp),)),
+                            SizedBox(height: 10.w,),
+                            InkWell(onTap: (){Navigator.push(context, CustomRoute(DispatcherTaskPage(status: 2,)));},child: Text("已结束数: ${dataS["completeCount"]??"0"}",style: TextStyle(color: CXColors.titleColor_55,fontSize: 26.sp),)),
+                            SizedBox(height: 10.w,),
+                            InkWell(onTap: (){Navigator.push(context, CustomRoute(DispatcherTaskPage(status: 0,)));},child: Text("未处理数: ${dataS["notStartCount"]??"0"}",style: TextStyle(color: CXColors.titleColor_55,fontSize: 26.sp),)),
+                          ],
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                        ),
+                      ),
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Text("报警总数: ${dataS["handleCount"]+dataS["unHandleCount"]}",style: TextStyle(color: CXColors.titleColor_55,fontSize: 26.sp),),
+                            SizedBox(height: 10.w,),
+                            Text("已处理数: ${dataS["handleCount"]??""}",style: TextStyle(color: CXColors.titleColor_55,fontSize: 26.sp),),
+                            SizedBox(height: 10.w,),
+                            Text("未处理数: ${dataS["unHandleCount"]??""}",style: TextStyle(color: CXColors.titleColor_55,fontSize: 26.sp),),
+                          ],
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),

@@ -33,40 +33,9 @@ class _LoginPageState extends State<LoginPage> {
   StreamSubscription showLoadingSubscription;
   bool keepLogin = false;
 
-
-  ///Vpn
-  // var state = FlutterVpnState.disconnected;
-  // CharonErrorState charonState = CharonErrorState.NO_ERROR;
   @override
   initState() {
-    ///Vpn
-    // FlutterVpn.prepare();
-    // FlutterVpn.onStateChanged.listen((s) => setState(() => state = s));
     super.initState();
-    // ///Connect //222.173.76.34:443
-    // FlutterVpn.simpleConnect(
-    //   "222.173.76.34:443",
-    //   "admin20G",
-    //   "Hh123456@",
-    // );
-    /*
-
-    ///Connect
-    FlutterVpn.simpleConnect(
-      "address",
-      "username",
-      "password",
-    );
-    ///Disconnect
-    FlutterVpn.disconnect();
-    ///Update State
-    var newState = await FlutterVpn.currentState;
-    setState(() => state = newState);
-    ///Update Charon State
-    var newCState = await FlutterVpn.charonErrorState;
-    setState(() => charonState = newCState);
-
-    * */
 
     keepLogin = CustomerModel.keepLogin;
 

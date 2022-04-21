@@ -83,7 +83,7 @@ class MyAppState extends State<MyApp> {
     ///百度地图sdk初始化鉴权
     if (Platform.isIOS) {
       BMFMapSDK.setApiKeyAndCoordType(
-          'ni6Yg24GGbnO8xnAhd7xKgTNLDGcSsLZ', BMF_COORD_TYPE.BD09LL);
+          'IN4XWksGH4lvc1GQvbytVIxnIWlwUjcO', BMF_COORD_TYPE.BD09LL);
     } else if (Platform.isAndroid) {
       // Android 目前不支持接口设置Apikey,
       // 请在主工程的Manifest文件里设置，详细配置方法请参考官网(https://lbsyun.baidu.com/)demo
@@ -95,7 +95,7 @@ class MyAppState extends State<MyApp> {
         iOSAppId: "ed96239f50");*/
     ///推送注册
     if (Platform.isIOS) {
-      XgFlutterPlugin().startXg("1600021298", "ILPQQKK2VN24");
+      XgFlutterPlugin().startXg("1600024367", "IMY2RQ5TVA1E");
     }else{
       XgFlutterPlugin().startXg("1500015815", "AO3YNOCJ0AK2");
     }

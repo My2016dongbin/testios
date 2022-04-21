@@ -254,7 +254,7 @@ class _MainPageState extends State<MainPage>  with TickerProviderStateMixin{
     NetUtil.get(Api.VersionInfo, (data) async {
       log("checkVersion --> $data");
       if(data!=null && data["code"] == 200){
-        String newVersion = Platform.isAndroid?data["data"][0]["versionName"]??"1.0.1".trim():data["data"][0]["versionName"]??"1.0.1".trim();
+        String newVersion = Platform.isAndroid?data["data"][0]["versionNameIOS"]??"v1.0.1".trim():data["data"][0]["versionNameIOS"]??"v1.0.1".trim();
         PackageInfo packageInfo = await PackageInfo.fromPlatform();
 
         String version = packageInfo.version;
@@ -266,7 +266,7 @@ class _MainPageState extends State<MainPage>  with TickerProviderStateMixin{
           AppUpgrade.appUpgrade(
             context,
             _checkAppInfo(data["data"][0],latestVersion,mask),
-            iosAppId: 'id1578841078',
+            iosAppId: 'id1599669524',
             okBackgroundColors: [CXColors.gradient_green1,CXColors.gradient_green2],
             appMarketInfo: AppMarket.xiaoMi,
             onCancel: () {

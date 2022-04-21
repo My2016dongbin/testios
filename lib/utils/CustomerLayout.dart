@@ -246,8 +246,8 @@ class _TextMultiSplitState extends State<TextMultiSplit> {
 /*
 * 通用Dialog（取消/确认）
 * */
-showCommonDialog(context,title,leftClick,rightClick,{String leftStr,String rightStr,String hint}){
-  showCupertinoDialog(context: context, builder: (BuildContext context) {
+showCommonDialog(context,title,leftClick,rightClick,{String leftStr,String rightStr,String hint,bool dismiss}){
+  showCupertinoDialog(context: context, barrierDismissible: dismiss??true, builder: (BuildContext context) {
     return Container(
       child: Center(
         child: Container(

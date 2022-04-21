@@ -1,4 +1,7 @@
+import 'dart:developer';
 import 'dart:math';
+import 'package:flutter_baidu_mapapi_base/flutter_baidu_mapapi_base.dart';
+import 'package:flutter_baidu_mapapi_search/flutter_baidu_mapapi_search.dart';
 
 class AllUtils{
   final String BUGLY_APPID_ANDROID = "91c90c0246";//bugly appid Android
@@ -57,6 +60,33 @@ class AllUtils{
     }
   }
 
+  /// 获取区县坐标点集合
+  List<BMFCoordinate> getAreaLines() {
+    List<BMFCoordinate> coordinates = new List();
+
+  //   // 构造检索参数
+  //   BMFDistrictSearchOption districtSearchOption =
+  //   BMFDistrictSearchOption(city: '青岛市', district: '即墨区');
+  // // 检索实例
+  //   BMFDistrictSearch districtSearch = BMFDistrictSearch();
+  // // 检索回调
+  //   districtSearch.onGetDistrictSearchResult(callback:
+  //       (BMFDistrictSearchResult result, BMFSearchErrorCode errorCode) {
+  //     print("result.toMap() = ${result.toMap()}");
+  //     return coordinates;
+  //     // 解析reslut，具体参考demo
+  //   });
+  // // 发起检索
+  //   bool flag = await districtSearch.districtSearch(districtSearchOption);
+
+
+    coordinates.add(BMFCoordinate(39.865, 116.304));
+    coordinates.add(BMFCoordinate(39.825, 116.354));
+    coordinates.add(BMFCoordinate(39.855, 116.394));
+    coordinates.add(BMFCoordinate(39.805, 116.454));
+    coordinates.add(BMFCoordinate(39.865, 116.504));
+    return coordinates;
+  }
   /// 填0格式化
   String parseZero(int oldStr){
     String newStr = "";
@@ -66,6 +96,15 @@ class AllUtils{
       newStr = "0${oldStr.toString()}";
     }
 
+    return newStr;
+  }
+  /// 时间格式化
+  String parseDate(String oldStr){
+    String newStr = "";
+    if(oldStr.length == 0 || oldStr.length<18){
+      return oldStr;
+    }
+    newStr = oldStr.substring(0,19).replaceAll("T", " ");
     return newStr;
   }
 

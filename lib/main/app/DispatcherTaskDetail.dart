@@ -6,11 +6,13 @@ import 'package:fireprevention/base/YGSBehavior.dart';
 import 'package:fireprevention/model/EventBusModel.dart';
 import 'package:fireprevention/network/Api.dart';
 import 'package:fireprevention/network/NetUtil.dart';
+import 'package:fireprevention/utils/AllUtils.dart';
 import 'package:fireprevention/utils/CXColors.dart';
 import 'package:fireprevention/utils/CustomRoute.dart';
 import 'package:fireprevention/utils/CustomerLayout.dart';
 import 'package:fireprevention/utils/EventBusUtils.dart';
 import 'package:fireprevention/utils/PictureShow.dart';
+import 'package:fireprevention/utils/VideoScreen.dart';
 import 'package:fireprevention/utils/map/location/MapUtil.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -32,13 +34,24 @@ class DispatcherTaskDetail extends StatefulWidget {
 class _DispatcherTaskDetailState extends State<DispatcherTaskDetail> {
   String id = "";
   dynamic dataS = {"position":{}};
+  dynamic dataDialog = {};
+  StreamSubscription endSubscription;
   @override
   void initState() {
     super.initState();
     if(widget.arguments!=null){
       id = widget.arguments["id"]??"";
     }
+    endSubscription =
+        EventBusUtil.getInstance().on<EndUpload>().listen((event) {
+          changeStatus(end: true);
+        });
     initData();
+  }
+  @override
+  void dispose() {
+    super.dispose();
+    endSubscription.cancel();
   }
   @override
   Widget build(BuildContext context) {
@@ -103,7 +116,7 @@ class _DispatcherTaskDetailState extends State<DispatcherTaskDetail> {
               RowDetail("结束时间","${dataS["taskEndTime"]??""}"),
               // RowDetail("执行人","${dataS["operatorName"]??""}"),
               RowDetail("任务内容","${dataS["taskContent"]??""}"),
-              RowDetail("地址","${dataS["taskRegion"]??""}"),
+              RowDetail("地址","${dataS["address"]??""}"),
               dataS["position"]!=null?RowDetail("经度","${dataS["position"]["lng"]??""}"):SizedBox(),
               dataS["position"]!=null?RowDetail("纬度","${dataS["position"]["lat"]??""}"):SizedBox(),
               ///报警详情
@@ -127,7 +140,11 @@ class _DispatcherTaskDetailState extends State<DispatcherTaskDetail> {
                           )
                       ),
                       onTap: (){
-                        showWarningDetail(dataS);
+                        if(dataDialog["isReal"]!=null){
+                          showWarningDetail(dataDialog);
+                        }else{
+                          Fluttertoast.showToast(msg: "未查询到该报警设备数据");
+                        }
                       },
                     ),
                   ],
@@ -139,6 +156,14 @@ class _DispatcherTaskDetailState extends State<DispatcherTaskDetail> {
                 alignment: WrapAlignment.center,
                 children: getWrapChildren(),
               ),
+              uploadList.length==0?SizedBox():Container(
+                margin: EdgeInsets.fromLTRB(26.w, 14.w, 26.w, 0),
+                alignment: Alignment.centerLeft,
+                child: Text("现场上报数据",style: TextStyle(color: CXColors.BlackColor,fontSize: 28.sp),),
+              ),
+              ListView.builder(itemBuilder: (BuildContext context, int index) {
+                return UploadView(uploadList[index],index);
+              },physics: NeverScrollableScrollPhysics(),shrinkWrap: true,itemCount: uploadList.length,padding: EdgeInsets.zero,),
             ],
           ),
         ),
@@ -146,6 +171,7 @@ class _DispatcherTaskDetailState extends State<DispatcherTaskDetail> {
     );
   }
 
+  List uploadList = new List();
   void initData() {
     EventBusUtil.getInstance().fire(Toloading());
     NetUtil.get(Api.DispatcherTaskDetail, (data){
@@ -154,6 +180,39 @@ class _DispatcherTaskDetailState extends State<DispatcherTaskDetail> {
         setState(() {
           dataS = data["data"];
           EventBusUtil.getInstance().fire(Todismiss());
+          ///查看详情数据
+          String infoStr = "";
+          if("${dataS["taskType"]}" == "2"){
+            infoStr = "fire/api/monitorFirealarm";
+          }else if("${dataS["taskType"]}" == "5"){
+            infoStr = "fire/api/BuildingFirealarm";
+          }
+          EventBusUtil.getInstance().fire(Toloading());
+          ///获取dialog详情
+          NetUtil.get(Api.REQUEST_BASE + infoStr, (data){
+            print("DispatcherTaskDetail --> data = $data");
+            if(data!=null && data["code"] == 200){
+              setState(() {
+                dataDialog = data["data"][0];
+                EventBusUtil.getInstance().fire(Todismiss());
+              });
+            }
+          },params: {
+            "id": dataS["fireId"]
+          });
+          ///获取现场上报详情
+          uploadList.clear();
+          NetUtil.post(Api.REQUEST_BASE + "oa/api/taskDetail/list", (data){
+            print("DispatcherTaskDetail --> upload = $data");
+            if(data!=null && data["code"] == 200){
+              setState(() {
+                uploadList = data["data"];
+                EventBusUtil.getInstance().fire(Todismiss());
+              });
+            }
+          },params: {
+            "taskId": dataS["id"]
+          });
         });
       }
     },params: {
@@ -200,17 +259,23 @@ class _DispatcherTaskDetailState extends State<DispatcherTaskDetail> {
     return listW;
   }
 
-  void changeStatus() {
+  void changeStatus({bool end}) {
     EventBusUtil.getInstance().fire(Toloading());
     NetUtil.put(Api.DispatcherTaskDetail, (data){
       print("DispatcherTaskDetail --> data = $data");
       if(data!=null && data["code"] == 200){
         initData();
       }
-    },params: changeStatusParams());
+    },params: changeStatusParams(end: end));
   }
 
-  changeStatusParams() {
+  changeStatusParams({bool end}) {
+    if(end){
+      return {
+        "status": 2,
+        "id": id
+      };
+    }
     if(dataS["status"]==null || dataS["status"]==0){
       return {
         "status": 1,
@@ -283,19 +348,19 @@ class _DispatcherTaskDetailState extends State<DispatcherTaskDetail> {
       ),
     );
     listW.add(
-      MakerDetailCell("一体机名称：","${data["taskContent"]??""}"),
+      MakerDetailCell("一体机名称：","${data["name"]??""}"),
     );
     listW.add(
-      MakerDetailCell("地址：","${data["taskRegion"]??""}"),
+      MakerDetailCell("地址：","${data["address"]??""}"),
     );
     listW.add(
-      MakerDetailCell("报警时间：","${data["createTime"].toString().substring(0,19).replaceAll("T", " ")??""}"),
+      MakerDetailCell("报警时间：","${data["alarmDatetime"].toString().substring(0,19).replaceAll("T", " ")??""}"),
     );
     listW.add(
-      MakerDetailCell("经纬度：","${data["position"]["lng"]} ${data["position"]["lat"]}"),
+      MakerDetailCell("经纬度：","${data["alarmLongitude"]} ${data["alarmLatitude"]}"),
     );
     listW.add(
-      MakerDetailCell("是否真实：","真实火情"),
+      MakerDetailCell("是否真实：","${data["isReal"]}"=="0"?"疑似火情":"真实火情"),
     );
     listW.add(
       Container(
@@ -303,11 +368,18 @@ class _DispatcherTaskDetailState extends State<DispatcherTaskDetail> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            InkWell(child: FadeInImage.assetNetwork(placeholder:"assets/images/common/ic_no_pic.png",height: 200.w, image: "${data["taskImg"]??''}",),onTap: (){
+            InkWell(child: FadeInImage.assetNetwork(placeholder:"assets/images/common/ic_no_pic.png",height: 200.w, image: "${data["picPath1"]??''}",),onTap: (){
               ///查看图片
               Navigator.push(context,
                   MaterialPageRoute<void>(builder: (BuildContext context) {
-                    return PictureShow(null,"${data["taskImg"]??''}");
+                    return PictureShow(null,"${data["picPath1"]??''}");
+                  }));
+            },),
+            InkWell(child: FadeInImage.assetNetwork(placeholder:"assets/images/common/ic_no_pic.png",height: 200.w, image: "${data["picPath2"]??''}",),onTap: (){
+              ///查看图片
+              Navigator.push(context,
+                  MaterialPageRoute<void>(builder: (BuildContext context) {
+                    return PictureShow(null,"${data["picPath2"]??''}");
                   }));
             },),
           ],
@@ -355,5 +427,81 @@ class RowDetail extends StatelessWidget {
           ],
         ),
       );
+  }
+}
+
+class RowInDetail extends StatelessWidget {
+  final String title;
+  final String content;
+
+  RowInDetail(this.title, this.content);
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.fromLTRB(26.w, 14.w, 26.w, 0),
+        child: Row(
+          children: [
+            Container(width: 160.w,alignment: Alignment.centerLeft,child: Text("${title??""}:",style: TextStyle(color: CXColors.BlackColor.withAlpha(150),fontSize: 26.sp),)),
+            Expanded(child: Text("${content??""}",style: TextStyle(color: CXColors.BlackColor.withAlpha(150),fontSize: 26.sp),)),
+          ],
+        ),
+      );
+  }
+}
+class UploadView extends StatelessWidget {
+  final dynamic data;
+  final int index;
+
+  UploadView(this.data,this.index);
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        RowInDetail("上报时间", AllUtils().parseDate(data["createTime"]??"")),
+        RowInDetail("经度", "${data["longitude"]??""}"),
+        RowInDetail("纬度", "${data["latitude"]??""}"),
+        RowInDetail("现场情况", data["siteConditions"]??""),
+        RowInDetail("其他信息", data["otherConditions"]??""),
+        (data["videoUrl"]==null||data["videoUrl"]=="")?SizedBox():Container(
+          margin: EdgeInsets.fromLTRB(26.w, 14.w, 26.w, 0),
+          child: Row(
+            children: [
+              Container(width: 160.w,alignment: Alignment.centerLeft,child: Text("上传视频:",style: TextStyle(color: CXColors.BlackColor.withAlpha(150),fontSize: 26.sp),)),
+              CommonButton(text: "查看视频", onPressed: (){
+                Navigator.push(context, CustomRoute(VideoScreen(url: data["videoUrl"]??"",)));
+              },width: 150.w,height: 70.w,margin: EdgeInsets.zero,backgroundColor: CXColors.maintab,fontSize: 27.sp,)
+            ],
+          ),
+        ),
+        Wrap(
+          children: getImages(data,context),
+          crossAxisAlignment: WrapCrossAlignment.start,
+          alignment: WrapAlignment.start,
+        ),
+        SizedBox(height: 20.w,),
+      ],
+    );
+  }
+
+  getImages(data,context) {
+    List<Widget> imageList = new List();
+    String str = data["imgUrl"]??"";
+    List list = str.split(",");
+    for(String imageStr in list){
+      imageList.add(
+          imageStr==""?SizedBox():
+          InkWell(
+            child: Container(
+                child: FadeInImage.assetNetwork(placeholder: "", image: imageStr,width: 300.w,height: 200.w,fit: BoxFit.cover,),
+                margin:EdgeInsets.fromLTRB(25.w, 15.w, 25.w, 15.w),
+            ),
+            onTap: (){
+              Navigator.push(context, CustomRoute(PictureShow(null,imageStr)));
+            },
+          ),);
+    }
+    return imageList;
   }
 }

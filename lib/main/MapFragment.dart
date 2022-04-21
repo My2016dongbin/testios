@@ -4,6 +4,7 @@ import 'package:amap_flutter_navi/amap_flutter_navi.dart';
 import 'package:amap_flutter_base/amap_flutter_base.dart';
 import 'package:fireprevention/model/CustomerModel.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_baidu_mapapi_search/flutter_baidu_mapapi_search.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:fireprevention/base/BaseCustomerLayout.dart';
 import 'package:fireprevention/model/EventBusModel.dart';
@@ -26,7 +27,6 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'app/DispatcherTaskPage.dart';
-import 'map/StarSettingPage.dart';
 import 'map/StatisticsPage.dart';
 
 /// 地图类型示例
@@ -310,6 +310,9 @@ class _MapFragmentState extends State<MapFragment> with AutomaticKeepAliveClient
             }
           }
         });
+
+    ///地图边界
+    drawAreaLines();
   }
 
   @override
@@ -317,7 +320,7 @@ class _MapFragmentState extends State<MapFragment> with AutomaticKeepAliveClient
     super.initState();
     ///aMap_guide init
     initPlatformState();
-    AmapFlutterNavi.init('6c5e61f0474c6a4af66d54fbaacc315a');
+    AmapFlutterNavi.init('a0dd5d284befa891b37a2ed4bd99c051');
     markerDetailSubscription = EventBusUtil.getInstance().on<MarkerDetail>().listen((event) async {
       int currentZoom = await myMapController.getZoomLevel();
       ///先跳到火点坐标
@@ -356,6 +359,65 @@ class _MapFragmentState extends State<MapFragment> with AutomaticKeepAliveClient
     getWarningListDate();
     //获取资源初始化信息
     getInitResourceData();
+    ///获取行政区边界坐标数据
+    getAreaPoints();
+  }
+
+  List<List> areaPointsList = new List();
+  Future<void> getAreaPoints() async {
+    areaPointsList.clear();
+    // 构造检索参数
+    BMFDistrictSearchOption districtSearchOption =
+    BMFDistrictSearchOption(city: '青岛市', district: '即墨区');
+    // 检索实例
+    BMFDistrictSearch districtSearch = BMFDistrictSearch();
+    // 检索回调
+    districtSearch.onGetDistrictSearchResult(callback:
+        (BMFDistrictSearchResult result, BMFSearchErrorCode errorCode) {
+      print("bingo result.toMap() = ${result.toMap()}");
+      List lists = result.toMap()["paths"];
+      areaPointsList = lists;
+      drawAreaLines();
+    });
+    // 发起检索
+    bool flag = await districtSearch.districtSearch(districtSearchOption);
+    print("bingo result.toMap() flag = $flag");
+  }
+
+  void drawAreaLines(){
+    for(int i = 0; i < areaPointsList.length; i++){
+      List areaModelList = areaPointsList[i];
+      List<BMFCoordinate> areaModelPointsList = new List<BMFCoordinate>();
+      for(int m = 0 ; m < areaModelList.length; m++){
+        dynamic model = areaModelList[m];
+        areaModelPointsList.add(BMFCoordinate(model["latitude"],model["longitude"]));
+      }
+      ///地图边界
+      // 颜色索引,索引的值都是0,表示所有线段的颜色都取颜色集colors的第一个值
+      List<int> indexs = new List();
+      for(int i = 0; i < areaModelPointsList.length; i++){
+        indexs.add(0);
+      }
+
+      // 颜色
+      List<Color> colors = List(1);
+      colors[0] = Colors.blueAccent;
+
+      // 创建polyline
+      BMFPolyline colorsPolyline = BMFPolyline(
+        // id: polylineOptions.hashCode.toString(),
+          coordinates: areaModelPointsList,
+          indexs: indexs,
+          colors: colors,
+          width: 12,
+          dottedLine: false,
+          lineDashType: BMFLineDashType.LineDashTypeNone,
+          lineCapType: BMFLineCapType.LineCapButt,
+          lineJoinType: BMFLineJoinType.LineJoinRound);
+
+      // 添加polyline
+      myMapController?.addPolyline(colorsPolyline);
+    }
   }
 
   String _platformVersion = 'Unknown';
@@ -457,11 +519,15 @@ class _MapFragmentState extends State<MapFragment> with AutomaticKeepAliveClient
     NetUtil.post(Api.MapWarningList, (data){
       print("MapWarningList --> data = $data");
       if(data!=null && data["code"] == 200){
-        List allList = data["data"][0]["dataList"];
+        List allList = data["data"];
         warningAllList.clear();
         //剔除所有疑似火情
         for(dynamic model in allList){
-          if(model["isReal"] == 1 || model["isReal"] == null){
+          if(model["isReal"] != null){
+            if(model["isReal"] == 1){
+              warningAllList.add(model);
+            }
+          }else{
             warningAllList.add(model);
           }
         }
@@ -475,8 +541,8 @@ class _MapFragmentState extends State<MapFragment> with AutomaticKeepAliveClient
           if(model["isReal"] == null){
             warningList.add(model);
           }
-          //真实火点
-          if(model["isReal"] == 1){
+          //已处理
+          if(model["isReal"] != null){
             warningList2.add(model);
           }
         }
@@ -491,18 +557,36 @@ class _MapFragmentState extends State<MapFragment> with AutomaticKeepAliveClient
   }
   fireListDateParams() {
     dynamic params = {
-      "provinceCode": "230000",
       "startTime": startTime,
       "endTime": endTime,
+      "satellite": endTime,
+      "landType": endTime,
     };
+    if(CustomerModel.gridNo.contains("0000")){
+      params["provinceCode"] = CustomerModel.gridNo;
+    }else if(CustomerModel.gridNo.contains("00")){
+      params["cityCode"] = CustomerModel.gridNo;
+    }else{
+      params["countyCode"] = CustomerModel.gridNo;
+    }
     return params;
   }
   warningListDateParams() {
+    // dynamic params = {
+    //   "dto": {},
+    //   "limit": 200,
+    //   "page": 1,
+    // };
     dynamic params = {
-      "dto": {},
-      "limit": 200,
-      "page": 1,
+      "isReal": null,
+      "groupId": CustomerModel.groupId,
+      "isHandle": 0,
     };
+    if(shijianType==0){
+      params["type"] = null;
+    }else{
+      params["type"] = shijianType;
+    }
     return params;
   }
 
@@ -565,7 +649,7 @@ class _MapFragmentState extends State<MapFragment> with AutomaticKeepAliveClient
     }
 
     ///2.报警列表（一体机）
-    for(dynamic model in warningAllList){
+    for(dynamic model in warningList){
       /// 创建BMFMarker
       BMFMarker marker = BMFMarker(
           position: BMFCoordinate(model["latitude"],model["longitude"]),
@@ -573,17 +657,17 @@ class _MapFragmentState extends State<MapFragment> with AutomaticKeepAliveClient
           enabled: true,
           visible: true,
           identifier: 'warning${model["id"]}',
-          icon: 'assets/images/main/map/ic_fire.png');
+          icon: parseMarkerImage("${model["type"]}"));
 
       /// 添加Marker
       bool ys;
       ys = await myMapController.addMarker(marker);
       warningMarkerList.add(marker);
     }
-    if(warningAllList.isNotEmpty && type == "warning"){
+    if(warningList.isNotEmpty && type == "warning"){
       ///跳到第一报警点
       myMapController?.setCenterCoordinate(
-          BMFCoordinate(warningAllList[0]["latitude"],warningAllList[0]["longitude"]), true,animateDurationMs: 200
+          BMFCoordinate(warningList[0]["latitude"],warningList[0]["longitude"]), true,animateDurationMs: 200
       );
     }
 
@@ -927,7 +1011,7 @@ class _MapFragmentState extends State<MapFragment> with AutomaticKeepAliveClient
     return mapOptions;
   }
 
-  ///报警列表分类条件 0 全部, 1 未处理, 2 真实火点
+  ///报警列表分类条件 0 全部, 1 未处理, 2 已处理
   int warningType = 0;
   ///报警列表
   void openWarningList() {
@@ -946,20 +1030,41 @@ class _MapFragmentState extends State<MapFragment> with AutomaticKeepAliveClient
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(margin: EdgeInsets.fromLTRB(20.w, 18.w, 0, 20.w),child: Text("报警列表",style: TextStyle(color: CXColors.WhiteColor,fontSize: 28.sp),)),
-                    InkWell(
-                      child: Container(
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(getWarningType(),style: TextStyle(color: CXColors.WhiteColor,fontSize: 28.sp),),
-                            Icon(Icons.arrow_drop_down,color: CXColors.WhiteColor,size: 36.w,),
-                            SizedBox(width: 10.w,),
-                          ],
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        InkWell(
+                          child: Container(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(getShijianType(),style: TextStyle(color: CXColors.WhiteColor,fontSize: 28.sp),),
+                                Icon(Icons.arrow_drop_down,color: CXColors.WhiteColor,size: 36.w,),
+                                SizedBox(width: 10.w,),
+                              ],
+                            ),
+                          ),
+                          onTap: (){
+                            showShijianListFilter(sheetState,context);
+                          },
                         ),
-                      ),
-                      onTap: (){
-                        showWarningListFilter(sheetState,context);
-                      },
+                        SizedBox(width: 36.w,),
+                        InkWell(
+                          child: Container(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(getWarningType(),style: TextStyle(color: CXColors.WhiteColor,fontSize: 28.sp),),
+                                Icon(Icons.arrow_drop_down,color: CXColors.WhiteColor,size: 36.w,),
+                                SizedBox(width: 10.w,),
+                              ],
+                            ),
+                          ),
+                          onTap: (){
+                            showWarningListFilter(sheetState,context);
+                          },
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -1063,10 +1168,10 @@ class _MapFragmentState extends State<MapFragment> with AutomaticKeepAliveClient
     }, isScrollControlled: true,);
   }
 
-  ///报警信息列表筛选窗口
-  void showWarningListFilter(void Function(void Function()) sheetState ,BuildContext context) {
+  ///报警信息列表筛选窗口-事件类型
+  void showShijianListFilter(void Function(void Function()) sheetState ,BuildContext context) {
     showCupertinoDialog(context: context, builder: (BuildContext context) {
-      int tag = warningType;
+      int tag = shijianType;
       return StatefulBuilder(
         builder: (BuildContext context, void Function(void Function()) logState) {
           return Stack(
@@ -1083,8 +1188,14 @@ class _MapFragmentState extends State<MapFragment> with AutomaticKeepAliveClient
                   child: Stack(
                     children: [
                       Container(
-                        margin: EdgeInsets.fromLTRB(40.w, 30.w, 0, 0),
-                          child: Text("选择分类",style: TextStyle(color: CXColors.BlackColor,fontSize: 32.sp,height: 1.2),)
+                          margin: EdgeInsets.fromLTRB(40.w, 30.w, 0, 0),
+                          child: Row(
+                            children: [
+                              Image.asset("assets/images/common/ic_launcher.png",width: 60.w,height: 60.w,),
+                              SizedBox(width: 10.w,),
+                              Text("事件分类",style: TextStyle(color: CXColors.BlackColor,fontSize: 33.sp,height: 1.2),),
+                            ],
+                          )
                       ),
                       Align(
                         alignment: Alignment.centerLeft,
@@ -1095,7 +1206,7 @@ class _MapFragmentState extends State<MapFragment> with AutomaticKeepAliveClient
                             InkWell(
                               child: Container(
                                 color: CXColors.trans,
-                                padding: EdgeInsets.fromLTRB(0, 15.w, 0, 15.w),
+                                padding: EdgeInsets.fromLTRB(20.w, 15.w, 0, 15.w),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.max,
                                   children: [
@@ -1115,7 +1226,137 @@ class _MapFragmentState extends State<MapFragment> with AutomaticKeepAliveClient
                             InkWell(
                               child: Container(
                                 color: CXColors.trans,
-                                padding: EdgeInsets.fromLTRB(0, 15.w, 0, 15.w),
+                                padding: EdgeInsets.fromLTRB(20.w, 15.w, 0, 15.w),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.max,
+                                  children: [
+                                    SizedBox(width: 30.w,),
+                                    Icon(tag==2?Icons.radio_button_checked:Icons.radio_button_off,color: (tag==2)?CXColors.BlackColor:CXColors.titleColor_88,size: 40.w,),
+                                    SizedBox(width: 20.w,),
+                                    Text("森林防火",style: TextStyle(color: (tag==2)?CXColors.BlackColor:CXColors.titleColor_88,fontSize: 28.sp,height: 1.2),)
+                                  ],
+                                ),
+                              ),
+                              onTap: (){
+                                logState(() {
+                                  tag = 2;
+                                });
+                              },
+                            ),
+                            InkWell(
+                              child: Container(
+                                color: CXColors.trans,
+                                padding: EdgeInsets.fromLTRB(20.w, 15.w, 0, 15.w),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.max,
+                                  children: [
+                                    SizedBox(width: 30.w,),
+                                    Icon(tag==5?Icons.radio_button_checked:Icons.radio_button_off,color: (tag==5)?CXColors.BlackColor:CXColors.titleColor_88,size: 40.w,),
+                                    SizedBox(width: 20.w,),
+                                    Text("砂石盗采",style: TextStyle(color: (tag==5)?CXColors.BlackColor:CXColors.titleColor_88,fontSize: 28.sp,height: 1.2),)
+                                  ],
+                                ),
+                              ),
+                              onTap: (){
+                                logState(() {
+                                  tag = 5;
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.bottomRight,
+                        child: CommonButton(
+                          text: "确定",
+                          width: 150.w,
+                          height: 75.w,
+                          margin: EdgeInsets.fromLTRB(0, 0, 20.w, 20.w),
+                          solid: true,
+                          elevation: 0,
+                          fontSize: 28.sp,
+                          textColor: CXColors.BlackColor,
+                          backgroundColor: CXColors.lineColor_ec,
+                          solidColor: CXColors.lineColor_ec,
+                          onPressed: (){
+                            Navigator.pop(context);
+                            sheetState(() {
+                              shijianType = tag;
+                              getWarningListDate();
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    },barrierDismissible: true );
+  }
+  ///报警信息列表筛选窗口-状态
+  void showWarningListFilter(void Function(void Function()) sheetState ,BuildContext context) {
+    showCupertinoDialog(context: context, builder: (BuildContext context) {
+      int tag = warningType;
+      return StatefulBuilder(
+        builder: (BuildContext context, void Function(void Function()) logState) {
+          return Stack(
+            children: [
+              Align(
+                alignment: Alignment.center,
+                child: Container(
+                  width: 0.75.sw,
+                  height: 0.55.sw,
+                  decoration: BoxDecoration(
+                      color: CXColors.lineColor_ec,
+                      borderRadius: BorderRadius.circular(16.w)
+                  ),
+                  child: Stack(
+                    children: [
+                      Container(
+                          margin: EdgeInsets.fromLTRB(40.w, 30.w, 0, 0),
+                          child: Row(
+                            children: [
+                              Image.asset("assets/images/common/ic_launcher.png",width: 60.w,height: 60.w,),
+                              SizedBox(width: 10.w,),
+                              Text("处置情况",style: TextStyle(color: CXColors.BlackColor,fontSize: 33.sp,height: 1.2),),
+                            ],
+                          )
+                      ),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            InkWell(
+                              child: Container(
+                                color: CXColors.trans,
+                                padding: EdgeInsets.fromLTRB(20.w, 15.w, 0, 15.w),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.max,
+                                  children: [
+                                    SizedBox(width: 30.w,),
+                                    Icon(tag==0?Icons.radio_button_checked:Icons.radio_button_off,color: tag==0?CXColors.BlackColor:CXColors.titleColor_88,size: 40.w,),
+                                    SizedBox(width: 20.w,),
+                                    Text("全部",style: TextStyle(color: tag==0?CXColors.BlackColor:CXColors.titleColor_88,fontSize: 28.sp,height: 1.2),)
+                                  ],
+                                ),
+                              ),
+                              onTap: (){
+                                logState(() {
+                                  tag = 0;
+                                });
+                              },
+                            ),
+                            InkWell(
+                              child: Container(
+                                color: CXColors.trans,
+                                padding: EdgeInsets.fromLTRB(20.w, 15.w, 0, 15.w),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.max,
                                   children: [
@@ -1135,14 +1376,14 @@ class _MapFragmentState extends State<MapFragment> with AutomaticKeepAliveClient
                             InkWell(
                               child: Container(
                                 color: CXColors.trans,
-                                padding: EdgeInsets.fromLTRB(0, 15.w, 0, 15.w),
+                                padding: EdgeInsets.fromLTRB(20.w, 15.w, 0, 15.w),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.max,
                                   children: [
                                     SizedBox(width: 30.w,),
                                     Icon(tag==2?Icons.radio_button_checked:Icons.radio_button_off,color: (tag==2)?CXColors.BlackColor:CXColors.titleColor_88,size: 40.w,),
                                     SizedBox(width: 20.w,),
-                                    Text("真实火点",style: TextStyle(color: (tag==2)?CXColors.BlackColor:CXColors.titleColor_88,fontSize: 28.sp,height: 1.2),)
+                                    Text("已处理",style: TextStyle(color: (tag==2)?CXColors.BlackColor:CXColors.titleColor_88,fontSize: 28.sp,height: 1.2),)
                                   ],
                                 ),
                               ),
@@ -1411,7 +1652,7 @@ class _MapFragmentState extends State<MapFragment> with AutomaticKeepAliveClient
       MakerDetailCell("报警时间：","${data["alarmDatetime"].toString().substring(0,19).replaceAll("T", " ")??""}"),
     );
     listW.add(
-      MakerDetailCell("经纬度：","${data["latitude"]} ${data["longitude"]}"),
+      MakerDetailCell("经纬度：","${data["longitude"]} ${data["latitude"]}"),
     );
     if(data["isReal"] == 1){
       ///已处理真实火警
@@ -1443,26 +1684,7 @@ class _MapFragmentState extends State<MapFragment> with AutomaticKeepAliveClient
                         )
                     ),
                     onTap: (){
-                      EventBusUtil.getInstance().fire(Toloading());
-                      NetUtil.get(Api.REQUEST_BASE + parseRealParam(data), (dataNet){
-                        EventBusUtil.getInstance().fire(Todismiss());
-                        log("isReal --> dataNet = $dataNet");
-                        if(dataNet!=null && dataNet["code"] == 200){
-                          Fluttertoast.showToast(msg: "上报成功");
-                          Navigator.pop(context);
-                          getWarningListDate();
-                          showWarningDetail(warningAllList[0]);
-                        }else{
-                          Fluttertoast.showToast(msg: "${dataNet["message"]}");
-                        }
-                      },params: {
-                        "id": "${data["id"]}",
-                        "type": true,
-                        "isAndroid": 2,
-                      },errorCallBack: (e){
-                        EventBusUtil.getInstance().fire(Todismiss());
-                        Fluttertoast.showToast(msg: "网络异常");
-                      });
+                      showCommonDialog(context, "是否需要下发此条真实火情？", (){send(data,3);}, (){send(data,1);},leftStr: "不需要" ,rightStr: "下发");
                     },
                   ),
                   SizedBox(width: 10.w,),
@@ -1542,7 +1764,7 @@ class _MapFragmentState extends State<MapFragment> with AutomaticKeepAliveClient
                   },
                 ),
                 SizedBox(width: 10.w,),
-                InkWell(
+                ((data["videoPath2"]??'') == "")?SizedBox():InkWell(
                   child: Card(
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(2.w))),
                       color: CXColors.trans,
@@ -1587,7 +1809,7 @@ class _MapFragmentState extends State<MapFragment> with AutomaticKeepAliveClient
             ),
             SizedBox(width: 50.w,),
             Expanded(
-              child: InkWell(child: FadeInImage.assetNetwork(placeholder:"assets/images/common/ic_no_pic.png",height: 200.w, image: "${data["picPath2"]??''}",),onTap: (){
+              child: (data["picPath2"]??'')==""?SizedBox():InkWell(child: FadeInImage.assetNetwork(placeholder:"assets/images/common/ic_no_pic.png",height: 200.w, image: "${data["picPath2"]??''}",),onTap: (){
                 ///查看图片
                 Navigator.push(context,
                     MaterialPageRoute<void>(builder: (BuildContext context) {
@@ -1992,6 +2214,19 @@ class _MapFragmentState extends State<MapFragment> with AutomaticKeepAliveClient
     getFireListDate(openType: "fire");
   }
 
+  int shijianType = 0;//2 森林防火 5 砂石盗采 （4 海域监控）
+  String getShijianType() {
+    if(shijianType == 0){
+      return "全部";
+    }
+    if(shijianType == 2){
+      return "森林防火";
+    }
+    if(shijianType == 5){
+      return "砂石盗采";
+    }
+    return "";
+  }
   String getWarningType() {
     if(warningType == 0){
       return "全部";
@@ -2000,7 +2235,7 @@ class _MapFragmentState extends State<MapFragment> with AutomaticKeepAliveClient
       return "未处理";
     }
     if(warningType == 2){
-      return "真实火点";
+      return "已处理";
     }
     return "";
   }
@@ -2139,6 +2374,44 @@ class _MapFragmentState extends State<MapFragment> with AutomaticKeepAliveClient
       param = "fire/api/BuildingFirealarm/realOrError";
     }
     return param;
+  }
+
+  parseMarkerImage(String type) {
+    String imageStr = 'assets/images/main/map/ic_fires.png';
+    if(type == "2"){
+      imageStr = "assets/images/main/map/ic_red_fire.png";
+    }
+    if(type == "4"){
+      imageStr = "assets/images/main/map/ic_blue_fire.png";
+    }
+    if(type == "5"){
+      imageStr = "assets/images/main/map/ic_yellow_fire.png";
+    }
+    return imageStr;
+  }
+
+  send(data,int type) {
+    Navigator.pop(context);
+    EventBusUtil.getInstance().fire(Toloading());
+    NetUtil.get(Api.REQUEST_BASE + parseRealParam(data), (dataNet){
+      EventBusUtil.getInstance().fire(Todismiss());
+      log("isReal --> dataNet = $dataNet");
+      if(dataNet!=null && dataNet["code"] == 200){
+        Fluttertoast.showToast(msg: "上报成功");
+        Navigator.pop(context);
+        getWarningListDate();
+        showWarningDetail(warningAllList[0]);
+      }else{
+        Fluttertoast.showToast(msg: "${dataNet["message"]}");
+      }
+    },params: {
+      "id": "${data["id"]}",
+      "type": type,
+      "isAndroid": 2,
+    },errorCallBack: (e){
+      EventBusUtil.getInstance().fire(Todismiss());
+      Fluttertoast.showToast(msg: "网络异常");
+    });
   }
 }
 

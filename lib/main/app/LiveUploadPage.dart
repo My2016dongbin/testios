@@ -3,11 +3,13 @@ import 'dart:math';
 
 import 'package:fireprevention/base/BaseCustomerLayout.dart';
 import 'package:fireprevention/base/YGSBehavior.dart';
+import 'package:fireprevention/main/map/MapLocationPage.dart';
 import 'package:fireprevention/model/CustomerModel.dart';
 import 'package:fireprevention/model/EventBusModel.dart';
 import 'package:fireprevention/network/Api.dart';
 import 'package:fireprevention/network/NetUtil.dart';
 import 'package:fireprevention/utils/CXColors.dart';
+import 'package:fireprevention/utils/CustomRoute.dart';
 import 'package:fireprevention/utils/CustomerLayout.dart';
 import 'package:fireprevention/utils/EventBusUtils.dart';
 import 'package:fireprevention/utils/PictureShow.dart';
@@ -37,6 +39,8 @@ class _LiveUploadPageState extends State<LiveUploadPage> {
   File video;
   List<String> forpostImageList = [];
   List<String> forpostVideoList = [];
+  String longitude = "";
+  String latitude = "";
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -107,6 +111,34 @@ class _LiveUploadPageState extends State<LiveUploadPage> {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
+                                InkWell(
+                                  child: Container(
+                                    color: Colors.white,
+                                    padding: EdgeInsets.only(right: 5.w),
+                                    height: 90.w,
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text("经纬度   $longitude $latitude",style: TextStyle(color: CXColors.titleColor_99,fontSize: 26.sp),),
+                                        Image.asset("assets/images/main/app/ic_tomap.png",width: 36.w,height: 36.w,),
+                                      ],
+                                    ),
+                                  ),
+                                  onTap: (){
+                                    ///选择定位
+                                    Navigator.push(
+                                        context,
+                                        CustomRoute(
+                                            MapLocationPage(),timer: 200)).then((value) {
+                                      print("location return -> $value");
+                                      longitude = "${value["longitude"]??''}";
+                                      latitude = "${value["latitude"]??''}";
+                                      setState(() {
+                                      });
+                                    });
+                                  },
+                                ),
+                                LineCell(),
                                 EditCell(liveController,"现场情况"),
                                 LineCell(),
                                 EditCell(otherController,"其他信息"),
@@ -313,6 +345,7 @@ class _LiveUploadPageState extends State<LiveUploadPage> {
       if(data!=null && data["code"] == 200){
         Fluttertoast.showToast(msg: "上传成功");
         if(mounted){
+          EventBusUtil.getInstance().fire(EndUpload());
           Navigator.pop(context);
         }
       }else{
@@ -340,6 +373,8 @@ class _LiveUploadPageState extends State<LiveUploadPage> {
       "videoUrl": forpostVideoList.length>0?forpostVideoList[0]:"",
       "imgUrl": imgUrl,
       "taskId": widget.arguments["taskId"],
+      "latitude": latitude,
+      "longitude": longitude,
     };
   }
 

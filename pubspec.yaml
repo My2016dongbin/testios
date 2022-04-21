@@ -30,6 +30,8 @@ dependencies:
   flutter_screenutil: ^4.0.2
   flutter_bmflocation: ^1.0.4
   flutter_baidu_mapapi_map: ^2.0.1
+  flutter_baidu_mapapi_search: ^2.0.1
+#  flutter_baidu_mapapi_utils: ^2.0.1
   fluttertoast: ^7.1.8
 #  dokit: ^0.2.14
   random_string: ^1.1.0
@@ -45,6 +47,10 @@ dependencies:
     git:
       url: git://github.com/qdygs/amap_flutter_navi.git
       ref: main
+#  flutter_vpn:
+#    git:
+#      url: git://github.com/My2016dongbin/flutter_vpn.git
+#      ref: main
 #  flutter_vpn: ^0.9.0
 
 

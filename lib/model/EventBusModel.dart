@@ -36,6 +36,9 @@ class Todismiss {
 class FocusHide {
   FocusHide();
 }
+class EndUpload {
+  EndUpload();
+}
 class ShowToast {
   String msg;
   ShowToast(this.msg);

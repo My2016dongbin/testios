@@ -31,7 +31,8 @@ class Api {
   //隐患排查
   static const String DangerCheck = REQUEST_BASE + "fire/api/dangerCheck";
   //调度任务列表
-  static const String DispatcherTask = REQUEST_BASE + "oa/api/taskManagement/listNew";
+  static const String DispatcherTask = REQUEST_BASE + "oa/api/taskManagement/page";
+  // static const String DispatcherTask = REQUEST_BASE + "oa/api/taskManagement/listNew";
   //统计
   static const String Statistics = REQUEST_BASE + "fire/api/monitorFirealarm/getFireAlarmByDis";
   //调度任务列表详情
@@ -63,7 +64,8 @@ class Api {
   //Map-火情列表
   static const String MapFireList = REQUEST_BASE + "fire/api/satelliteFirealarm/list";
   //Map-报警列表（一体机数据）
-  static const String MapWarningList = REQUEST_BASE + "fire/api/monitorFirealarm/page";
+  // static const String MapWarningList = REQUEST_BASE + "fire/api/monitorFirealarm/page";
+  static const String MapWarningList = REQUEST_BASE + "fire/api/Statistic/getAlarmList";
   //Map-资源数据 -->动态获取
   static const String MapResourceData = REQUEST_BASE + "resource ??? /list";
   //Map-资源初始化数据

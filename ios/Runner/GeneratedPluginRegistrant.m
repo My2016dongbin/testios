@@ -40,6 +40,12 @@
 @import flutter_baidu_mapapi_map;
 #endif
 
+#if __has_include(<flutter_baidu_mapapi_search/FlutterBmfsearchPlugin.h>)
+#import <flutter_baidu_mapapi_search/FlutterBmfsearchPlugin.h>
+#else
+@import flutter_baidu_mapapi_search;
+#endif
+
 #if __has_include(<flutter_bmflocation/LocationFlutterPlugin.h>)
 #import <flutter_bmflocation/LocationFlutterPlugin.h>
 #else
@@ -103,6 +109,7 @@
   [FlutterAppUpgradePlugin registerWithRegistrar:[registry registrarForPlugin:@"FlutterAppUpgradePlugin"]];
   [FlutterBmfbasePlugin registerWithRegistrar:[registry registrarForPlugin:@"FlutterBmfbasePlugin"]];
   [FlutterBmfmapPlugin registerWithRegistrar:[registry registrarForPlugin:@"FlutterBmfmapPlugin"]];
+  [FlutterBmfsearchPlugin registerWithRegistrar:[registry registrarForPlugin:@"FlutterBmfsearchPlugin"]];
   [LocationFlutterPlugin registerWithRegistrar:[registry registrarForPlugin:@"LocationFlutterPlugin"]];
   [FluttertoastPlugin registerWithRegistrar:[registry registrarForPlugin:@"FluttertoastPlugin"]];
   [FLTImagePickerPlugin registerWithRegistrar:[registry registrarForPlugin:@"FLTImagePickerPlugin"]];
