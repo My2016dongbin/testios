@@ -12,5 +12,9 @@
 		<string>dns-settings</string>
 		<string>packet-tunnel-provider</string>
 	</array>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.haohai.firepreventionsjimo</string>
+	</array>
 </dict>
 </plist>

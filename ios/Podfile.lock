@@ -39,6 +39,8 @@ PODS:
   - flutter_bmflocation (1.0.3):
     - BMKLocationKit
     - Flutter
+  - flutter_vpn (0.1.0):
+    - Flutter
   - fluttertoast (0.0.2):
     - Flutter
     - Toast
@@ -72,6 +74,7 @@ DEPENDENCIES:
   - flutter_baidu_mapapi_map (from `.symlinks/plugins/flutter_baidu_mapapi_map/ios`)
   - flutter_baidu_mapapi_search (from `.symlinks/plugins/flutter_baidu_mapapi_search/ios`)
   - flutter_bmflocation (from `.symlinks/plugins/flutter_bmflocation/ios`)
+  - flutter_vpn (from `.symlinks/plugins/flutter_vpn/ios`)
   - fluttertoast (from `.symlinks/plugins/fluttertoast/ios`)
   - image_picker (from `.symlinks/plugins/image_picker/ios`)
   - multi_image_picker (from `.symlinks/plugins/multi_image_picker/ios`)
@@ -112,6 +115,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/flutter_baidu_mapapi_search/ios"
   flutter_bmflocation:
     :path: ".symlinks/plugins/flutter_bmflocation/ios"
+  flutter_vpn:
+    :path: ".symlinks/plugins/flutter_vpn/ios"
   fluttertoast:
     :path: ".symlinks/plugins/fluttertoast/ios"
   image_picker:
@@ -148,6 +153,7 @@ SPEC CHECKSUMS:
   flutter_baidu_mapapi_map: 771bf00671832b1fcddb17733518cd631529df16
   flutter_baidu_mapapi_search: 4cffaa74e739a4114595c4f82f790e1783bb612d
   flutter_bmflocation: 12f1ba91bae4b16d78d4f475023e0254ed351f1c
+  flutter_vpn: 95453289a195abfd6b291b10f70f36721dd862e9
   fluttertoast: 6122fa75143e992b1d3470f61000f591a798cc58
   image_picker: 9c3312491f862b28d21ecd8fdf0ee14e601b3f09
   multi_image_picker: c068931d08240565e0615fb01437d16984909183
